@@ -1,0 +1,18 @@
+{
+  "name": "Anime Workout RPG",
+  "short_name": "AnimeWorkout",
+  "description": "Gamified anime-inspired workout and nutrition plans",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

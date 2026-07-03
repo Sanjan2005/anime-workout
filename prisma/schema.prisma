@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum Goal {
+  CUT
+  BULK
+  MAINTAIN
+}
+
+enum Rank {
+  F
+  E
+  D
+  C
+  B
+  A
+  S
+}
+
+enum PlanPhase {
+  BULK
+  CUT
+  RECOMP
+}
+
+enum MuscleGroup {
+  CHEST
+  BACK
+  SHOULDERS
+  ARMS
+  CORE
+  LEGS
+  FULL_BODY
+}
+
+model User {
+  id              String    @id
+  email           String    @unique
+  timezone        String    @default("UTC")
+  age             Int?
+  heightCm        Float?
+  weightKg        Float?
+  gender          Gender?
+  bmr             Float?
+  tdee            Float?
+  calorieTarget   Float?
+  proteinG        Int?
+  carbsG          Int?
+  fatG            Int?
+  goal            Goal?
+  totalXp         Int       @default(0)
+  level           Int       @default(1)
+  rank            Rank      @default(F)
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  lastWorkoutDate DateTime? @db.Date
+  streakBadge     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  characterRefs CharacterReference[]
+  plans         WorkoutPlan[]
+  dailyXpLogs   DailyXpLog[]
+  completions   WorkoutCompletion[]
+  aiRateLimits  AiRateLimit[]
+
+  @@index([email])
+}
+
+model CharacterReference {
+  id             String   @id @default(cuid())
+  userId         String
+  frontImageUrl  String
+  backImageUrl   String
+  visionAnalysis Json?
+  createdAt      DateTime @default(now())
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plans WorkoutPlan[]
+
+  @@index([userId])
+}
+
+model WorkoutPlan {
+  id          String    @id @default(cuid())
+  userId      String
+  characterId String?
+  name        String
+  phase       PlanPhase @default(RECOMP)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character CharacterReference? @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  days      WorkoutDay[]
+  nutrition NutritionPlan?
+
+  @@index([userId, isActive])
+}
+
+model WorkoutDay {
+  id       String @id @default(cuid())
+  planId   String
+  dayIndex Int
+  name     String
+
+  plan      WorkoutPlan          @relation(fields: [planId], references: [id], onDelete: Cascade)
+  exercises WorkoutDayExercise[]
+
+  @@index([planId])
+}
+
+model Exercise {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  name        String
+  muscleGroup MuscleGroup
+
+  variations ExerciseVariation[]
+}
+
+model ExerciseVariation {
+  id                   String @id @default(cuid())
+  exerciseId           String
+  name                 String
+  difficultyTier       Int
+  difficultyMultiplier Float
+
+  exercise Exercise             @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  dayUses  WorkoutDayExercise[]
+
+  @@unique([exerciseId, name])
+}
+
+model WorkoutDayExercise {
+  id             String @id @default(cuid())
+  dayId          String
+  variationId    String
+  sets           Int
+  reps           Int
+  priorityWeight Float  @default(1.0)
+  orderIndex     Int
+  xpBudget       Float?
+  xpPerSet       Float?
+  notes          String?
+
+  day         WorkoutDay          @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  variation   ExerciseVariation   @relation(fields: [variationId], references: [id])
+  completions WorkoutCompletion[]
+
+  @@index([dayId])
+}
+
+model DailyXpLog {
+  id        String   @id @default(cuid())
+  userId    String
+  localDate DateTime @db.Date
+  earnedXp  Float    @default(0)
+  cap       Int      @default(50)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, localDate])
+  @@index([userId, localDate])
+}
+
+model WorkoutCompletion {
+  id            String   @id @default(cuid())
+  userId        String
+  dayExerciseId String
+  setNumber     Int
+  repsCompleted Int
+  xpAwarded     Float
+  localDate     DateTime @db.Date
+  completedAt   DateTime @default(now())
+
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayExercise WorkoutDayExercise @relation(fields: [dayExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayExerciseId, setNumber, localDate])
+  @@index([userId, localDate])
+}
+
+model NutritionPlan {
+  id            String @id @default(cuid())
+  planId        String @unique
+  dailyCalories Int
+  proteinG      Int
+  carbsG        Int
+  fatG          Int
+  mealStructure Json
+
+  plan WorkoutPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+}
+
+model AiRateLimit {
+  id        String   @id @default(cuid())
+  userId    String
+  localDate DateTime @db.Date
+  count     Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, localDate])
+}
