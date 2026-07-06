@@ -53,6 +53,9 @@ const config: Config = {
           s: "#eab308",
         },
       },
+      fontFamily: {
+        orbitron: ["var(--font-orbitron)"],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -68,10 +71,19 @@ const config: Config = {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
+        "shimmer-slide": {
+          "100%": { transform: "translateX(100%)" },
+        },
+        "neon-pulse": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.5" },
+        },
       },
       animation: {
         "rank-up": "rank-up 0.6s ease-out",
         shimmer: "shimmer 2s linear infinite",
+        "shimmer-slide": "shimmer-slide 1.5s ease-in-out infinite",
+        "neon-pulse": "neon-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
     },
   },
